@@ -195,6 +195,12 @@ cp .env.example .env
 
 **Important**: Never commit `.env` to version control! It's already in `.gitignore`.
 
+**For Render.com deployment:**
+Set these environment variables in your Render dashboard:
+- `SECRET_KEY` - Generate a secure key (use `python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"`)
+- `ALLOWED_HOSTS` - Your Render domain, e.g., `django-q-example.onrender.com` (or use `*` to allow all hosts - not recommended for production)
+- `DEBUG=False` - Always set to False in production
+
 ## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
