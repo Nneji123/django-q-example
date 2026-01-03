@@ -1,0 +1,23 @@
+services:
+  web:
+    build: .
+    container_name: django-q-web
+    command: uv run python run.py
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - db_data:/app/db
+    environment:
+      - DJANGO_SETTINGS_MODULE=backend.settings
+      - PYTHONUNBUFFERED=1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/scheduled-task-status/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+volumes:
+  db_data:
