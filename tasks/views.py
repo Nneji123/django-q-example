@@ -1,9 +1,5 @@
-"""
-API views for task management
-"""
-
 from django_q.models import Schedule
-from django_q.tasks import async_task, result, schedule
+from django_q.tasks import result, schedule
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.response import Response
@@ -20,8 +16,6 @@ from .tasks import sample_task
 
 
 class TaskView(APIView):
-    """View for creating and managing tasks"""
-
     @extend_schema(
         summary="Run a test task",
         description="Enqueue a sample task using django-q2 and return the task ID",
@@ -29,7 +23,6 @@ class TaskView(APIView):
         responses={200: TaskResponseSerializer, 400: None},
     )
     def post(self, request):
-        """Enqueue a sample task using django-q2"""
         serializer = TaskRequestSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -37,8 +30,7 @@ class TaskView(APIView):
         message = serializer.validated_data["message"]
         delay = serializer.validated_data["delay"]
 
-        # Enqueue the task
-        task_id = async_task(sample_task, message, delay)
+        task_id = sample_task.delay(message, delay)
 
         response_data = {
             "task_id": task_id,
@@ -52,8 +44,6 @@ class TaskView(APIView):
 
 
 class TaskResultView(APIView):
-    """View for retrieving task results"""
-
     @extend_schema(
         summary="Get task result",
         description="Retrieve the result of a task by its ID",
@@ -61,7 +51,6 @@ class TaskResultView(APIView):
         parameters=[],
     )
     def get(self, request):
-        """Get the result of a task by its ID"""
         task_id = request.query_params.get("task_id")
 
         if not task_id:
@@ -85,8 +74,6 @@ class TaskResultView(APIView):
 
 
 class ScheduledTaskView(APIView):
-    """View for managing scheduled tasks"""
-
     SCHEDULE_NAME = "scheduled_task_5s"
 
     @extend_schema(
@@ -95,7 +82,6 @@ class ScheduledTaskView(APIView):
         responses={200: ScheduledTaskResponseSerializer},
     )
     def post(self, request):
-        """Create or update a scheduled task that runs every 5 seconds"""
         existing_schedule = Schedule.objects.filter(name=self.SCHEDULE_NAME).first()
 
         if existing_schedule:
@@ -137,7 +123,6 @@ class ScheduledTaskView(APIView):
         responses={200: ScheduledTaskStatusSerializer},
     )
     def get(self, request):
-        """Get the status of the scheduled task"""
         schedule_obj = Schedule.objects.filter(name=self.SCHEDULE_NAME).first()
 
         if not schedule_obj:
@@ -169,7 +154,6 @@ class ScheduledTaskView(APIView):
         responses={200: ScheduledTaskResponseSerializer, 404: None},
     )
     def delete(self, request):
-        """Delete the scheduled task"""
         schedule_obj = Schedule.objects.filter(name=self.SCHEDULE_NAME).first()
 
         if not schedule_obj:
