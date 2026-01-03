@@ -1,13 +1,7 @@
-"""
-Serializers for task API endpoints
-"""
-
 from rest_framework import serializers
 
 
 class TaskRequestSerializer(serializers.Serializer):
-    """Serializer for task creation request"""
-
     message = serializers.CharField(
         required=True, help_text="Message to process in the task"
     )
@@ -20,8 +14,6 @@ class TaskRequestSerializer(serializers.Serializer):
 
 
 class TaskResponseSerializer(serializers.Serializer):
-    """Serializer for task creation response"""
-
     task_id = serializers.CharField(help_text="Unique task identifier")
     status = serializers.CharField(help_text="Task status")
     message = serializers.CharField(help_text="Response message")
@@ -29,16 +21,12 @@ class TaskResponseSerializer(serializers.Serializer):
 
 
 class TaskResultSerializer(serializers.Serializer):
-    """Serializer for task result response"""
-
     task_id = serializers.CharField(help_text="Task identifier")
     status = serializers.CharField(help_text="Result status")
     result = serializers.DictField(help_text="Task execution result")
 
 
 class ScheduledTaskStatusSerializer(serializers.Serializer):
-    """Serializer for scheduled task status"""
-
     exists = serializers.BooleanField(help_text="Whether the scheduled task exists")
     name = serializers.CharField(required=False, help_text="Schedule name")
     next_run = serializers.DateTimeField(
@@ -60,8 +48,6 @@ class ScheduledTaskStatusSerializer(serializers.Serializer):
 
 
 class ScheduledTaskResponseSerializer(serializers.Serializer):
-    """Serializer for scheduled task create/update/delete response"""
-
     status = serializers.CharField(help_text="Operation status")
     message = serializers.CharField(help_text="Response message")
     schedule_id = serializers.IntegerField(
@@ -73,3 +59,25 @@ class ScheduledTaskResponseSerializer(serializers.Serializer):
     schedule_type = serializers.CharField(
         required=False, help_text="Schedule type description"
     )
+
+
+class EmailRequestSerializer(serializers.Serializer):
+    subject = serializers.CharField(required=True, help_text="Email subject")
+    html_template_path = serializers.CharField(required=True, help_text="Path to HTML template")
+    to_email = serializers.ListField(
+        child=serializers.EmailField(),
+        required=True,
+        help_text="List of recipient email addresses",
+    )
+    context = serializers.DictField(
+        required=True, help_text="Context data for rendering the email template"
+    )
+    service_type = serializers.CharField(
+        required=False, allow_null=True, help_text="Deprecated: Email service type"
+    )
+
+
+class EmailResponseSerializer(serializers.Serializer):
+    task_id = serializers.CharField(help_text="Task identifier")
+    status = serializers.CharField(help_text="Task status")
+    message = serializers.CharField(help_text="Response message")

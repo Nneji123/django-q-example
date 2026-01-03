@@ -8,10 +8,6 @@ class TasksConfig(AppConfig):
     name = "tasks"
 
     def ready(self):
-        """
-        Auto-create the scheduled task when the app is ready.
-        This only runs if AUTO_CREATE_SCHEDULED_TASK is True in settings.
-        """
         if (
             hasattr(settings, "AUTO_CREATE_SCHEDULED_TASK")
             and settings.AUTO_CREATE_SCHEDULED_TASK
@@ -24,8 +20,8 @@ class TasksConfig(AppConfig):
                     schedule(
                         "tasks.tasks.scheduled_task",
                         name="scheduled_task_5s",
-                        schedule_type=Schedule.SECONDS,
-                        seconds=5,
+                        schedule_type=Schedule.MINUTES,
+                        minutes=5 / 60,
                         repeats=-1,
                     )
                     logger.info("Auto-created scheduled task (runs every 5 seconds)")

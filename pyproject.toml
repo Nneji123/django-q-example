@@ -11,4 +11,6 @@ dependencies = [
     "drf-spectacular>=0.27.0",
     "loguru>=0.7.0",
     "python-dotenv>=1.0.0",
+    "mjml>=0.12.0",
+    "html2text>=2024.2.26",
 ]

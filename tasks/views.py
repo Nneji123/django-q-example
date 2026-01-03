@@ -6,13 +6,15 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .serializers import (
+    EmailRequestSerializer,
+    EmailResponseSerializer,
     ScheduledTaskResponseSerializer,
     ScheduledTaskStatusSerializer,
     TaskRequestSerializer,
     TaskResponseSerializer,
     TaskResultSerializer,
 )
-from .tasks import sample_task
+from .tasks import sample_task, send_email_task
 
 
 class TaskView(APIView):
@@ -86,8 +88,8 @@ class ScheduledTaskView(APIView):
 
         if existing_schedule:
             existing_schedule.func = "tasks.tasks.scheduled_task"
-            existing_schedule.schedule_type = Schedule.SECONDS
-            existing_schedule.seconds = 5
+            existing_schedule.schedule_type = Schedule.MINUTES
+            existing_schedule.minutes = 5 / 60
             existing_schedule.repeats = -1
             existing_schedule.save()
             schedule_id = existing_schedule.id
@@ -96,8 +98,8 @@ class ScheduledTaskView(APIView):
             schedule_id = schedule(
                 "tasks.tasks.scheduled_task",
                 name=self.SCHEDULE_NAME,
-                schedule_type=Schedule.SECONDS,
-                seconds=5,
+                schedule_type=Schedule.MINUTES,
+                minutes=5 / 60,
                 repeats=-1,
             )
             message = "Scheduled task created"
@@ -137,7 +139,7 @@ class ScheduledTaskView(APIView):
                 "next_run": (
                     schedule_obj.next_run.isoformat() if schedule_obj.next_run else None
                 ),
-                "schedule_type": f"every {schedule_obj.seconds} seconds",
+                "schedule_type": f"every {int(schedule_obj.minutes * 60)} seconds",
                 "repeats": schedule_obj.repeats,
                 "success_count": schedule_obj.success_count,
                 "last_run": (
@@ -167,4 +169,40 @@ class ScheduledTaskView(APIView):
         response_data = {"status": "success", "message": "Scheduled task deleted"}
 
         response_serializer = ScheduledTaskResponseSerializer(response_data)
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
+
+
+class EmailView(APIView):
+    @extend_schema(
+        summary="Send email",
+        description="Enqueue an email task to send an email using MJML template",
+        request=EmailRequestSerializer,
+        responses={200: EmailResponseSerializer, 400: None},
+    )
+    def post(self, request):
+        serializer = EmailRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        subject = serializer.validated_data["subject"]
+        html_template_path = serializer.validated_data["html_template_path"]
+        to_email = serializer.validated_data["to_email"]
+        context = serializer.validated_data["context"]
+        service_type = serializer.validated_data.get("service_type")
+
+        task_id = send_email_task.delay(
+            subject=subject,
+            html_template_path=html_template_path,
+            to_email=to_email,
+            context=context,
+            service_type=service_type,
+        )
+
+        response_data = {
+            "task_id": task_id,
+            "status": "queued",
+            "message": "Email task has been enqueued",
+        }
+
+        response_serializer = EmailResponseSerializer(response_data)
         return Response(response_serializer.data, status=status.HTTP_200_OK)
